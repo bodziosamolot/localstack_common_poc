@@ -1,0 +1,81 @@
+version: "3"
+
+services:
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4568-4576:4568-4576"
+      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+    environment:
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - SERVICES=sns,sqs
+      - DEFAULT_REGION=us-east-1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./private${TMPDIR}:/tmp/localstack"
+
+  setup-resources:
+    image: mesosphere/aws-cli
+    volumes:
+      - ./dev_env:/project/dev_env
+    environment:
+      - AWS_ACCESS_KEY_ID=AKIAEXAMPLE123
+      - AWS_SECRET_ACCESS_KEY=AWSSECRETACCESSEY123
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        sleep 20
+        aws --version
+        # Executing SNS
+        aws sns create-topic --name local_sns --endpoint-url=http://localstack:4566
+        aws sns list-topics --endpoint-url=http://localstack:4566 
+        # Executing SQS
+        aws sqs create-queue --endpoint-url=http://localstack:4566 --queue-name local_queue;
+        aws sqs list-queues --endpoint-url=http://localstack:4566
+        # Subscribing to SNS to SQS
+        aws --endpoint-url=http://localstack:4566 sns subscribe --topic-arn arn:aws:sns:us-east-1:000000000000:local_sns --protocol sqs --notification-endpoint http://localstack:4566/000000000000/local_queue
+      "
+    depends_on:
+      - localstack
+
+  producer:
+    image: node:14
+    volumes:
+      - "./src/producer:/usr/src/app"
+    working_dir: "/usr/src/app"
+    ports:
+      - "3000:3000"
+    environment:
+      - AWS_ACCESS_KEY_ID=AKIAEXAMPLE123
+      - AWS_SECRET_ACCESS_KEY=AWSSECRETACCESSEY123
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        echo 'Installing dependencies'
+        npm i
+        echo 'Waiting for localstack'
+        sleep 30
+        npm start
+      "
+  consumer:
+    image: node:14
+    volumes:
+      - "./src/consumer:/usr/src/app"
+    working_dir: "/usr/src/app"
+    ports:
+      - "9500:9500"
+    environment:
+      - AWS_ACCESS_KEY_ID=AKIAEXAMPLE123
+      - AWS_SECRET_ACCESS_KEY=AWSSECRETACCESSEY123
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh -c
+    command: >
+      "
+        echo 'Installing dependencies'
+        npm i
+        echo 'Waiting for localstack'
+        sleep 30
+        npm start
+      "
