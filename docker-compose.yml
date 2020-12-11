@@ -79,3 +79,20 @@ services:
         sleep 30
         npm start
       "
+
+  consumer_dotnet:
+    image: mcr.microsoft.com/dotnet/sdk:5.0
+    volumes:
+      - "../consumer_dotnet:/usr/src/app"
+    working_dir: "/usr/src/app"
+    ports:
+      - "9500:9500"
+    environment:
+      - AWS_ACCESS_KEY_ID=AKIAEXAMPLE123
+      - AWS_SECRET_ACCESS_KEY=AWSSECRETACCESSEY123
+      - AWS_DEFAULT_REGION=us-east-1
+    entrypoint: /bin/sh -c
+    command: >
+      "
+       dotnet watch run --urls http://0.0.0.0:5000;https://0.0.0.0:5001
+      "
