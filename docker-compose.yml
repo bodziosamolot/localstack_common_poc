@@ -96,5 +96,5 @@ services:
       "
        echo 'Waiting for localstack'
        sleep 30
-       dotnet run -c Debug --urls http://0.0.0.0:5000;https://0.0.0.0:5001
+       dotnet watch run -c Debug --urls http://0.0.0.0:5000;https://0.0.0.0:5001
       "
