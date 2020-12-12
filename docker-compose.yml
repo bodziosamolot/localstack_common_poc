@@ -79,14 +79,14 @@ services:
         sleep 30
         npm start
       "
-
   consumer_dotnet:
     image: mcr.microsoft.com/dotnet/sdk:5.0
     volumes:
       - "../consumer_dotnet:/usr/src/app"
     working_dir: "/usr/src/app"
     ports:
-      - "9500:9500"
+      - "5001:5001"
+      - "5000:5000"
     environment:
       - AWS_ACCESS_KEY_ID=AKIAEXAMPLE123
       - AWS_SECRET_ACCESS_KEY=AWSSECRETACCESSEY123
@@ -94,5 +94,7 @@ services:
     entrypoint: /bin/sh -c
     command: >
       "
-       dotnet watch run --urls http://0.0.0.0:5000;https://0.0.0.0:5001
+       echo 'Waiting for localstack'
+       sleep 30
+       dotnet run -c Debug --urls http://0.0.0.0:5000;https://0.0.0.0:5001
       "
